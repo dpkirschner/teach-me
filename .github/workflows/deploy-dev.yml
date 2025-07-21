@@ -1,0 +1,39 @@
+name: CDK Deploy (dev)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "infra/**"
+      - ".github/workflows/deploy-dev.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Configure AWS creds via OIDC ─ create an IAM role 'GitHubOIDCRole'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubOIDCRole
+          aws-region: us-west-2
+
+      - name: Install CDK
+        run: |
+          npm install -g aws-cdk@2
+          pip install -r infra/requirements.txt
+
+      - name: CDK synth + deploy (no approval)
+        run: |
+          cd infra
+          cdk synth
+          cdk deploy --require-approval never
