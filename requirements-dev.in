@@ -1,7 +1,0 @@
-# Development dependencies
--r requirements.in
-
-ruff==0.12.4
-mypy==1.17.0
-pytest==8.4.1
-pytest-cov==6.2.1

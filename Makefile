@@ -19,22 +19,15 @@ venv: $(PYTHON) ## Create a virtual environment and install dev dependencies.
 $(PYTHON):
 	@echo "Creating virtual environment in $(VENV_DIR)..."
 	$(PYTHON_INTERP) -m venv $(VENV_DIR)
-	$(PYTHON) -m pip install -U pip pip-tools
+	$(PYTHON) -m pip install -U pip
 	$(MAKE) install-dev
 	$(MAKE) format
 
-lock: $(PYTHON) ## Lock production and development dependencies.
-	@echo "Locking dependencies..."
-	$(PYTHON) -m piptools compile --resolver=backtracking -o requirements.txt requirements.in
-	$(PYTHON) -m piptools compile --resolver=backtracking -o requirements-dev.txt requirements-dev.in
-
-install: $(PYTHON) ## Sync production dependencies and install the project.
-	$(PYTHON) -m piptools sync requirements.txt
+install: $(PYTHON) ## Install production dependencies and the project.
 	$(PYTHON) -m pip install -e .
 
-install-dev: $(PYTHON) ## Sync development dependencies and install the project.
-	$(PYTHON) -m piptools sync requirements-dev.txt
-	$(PYTHON) -m pip install -e .
+install-dev: $(PYTHON) ## Install development dependencies and the project.
+	$(PYTHON) -m pip install -e .[dev]
 
 # ==============================================================================
 # QUALITY & TESTING

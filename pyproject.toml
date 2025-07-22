@@ -7,7 +7,18 @@ name = "teach-me"
 version = "0.1.0"
 description = "A Python project"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi",
+    "pydantic",
+    "uvicorn[standard]",
+    "supabase",
+    "pydantic-settings",
+    "python-dotenv",
+    "pytest",
+    "pytest-mock",
+    "pytest-cov",
+    "httpx",
+]
 
 [project.optional-dependencies]
 dev = [
