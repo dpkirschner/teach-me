@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from teach_me.config.database import get_supabase_client
+from teach_me.config.supabase_db import get_supabase_client
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.job import JobCreate, JobUpdate
+from teach_me.models.request.job import JobCreate, JobUpdate
 
 
 @pytest.mark.integration

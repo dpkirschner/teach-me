@@ -18,6 +18,8 @@ dependencies = [
     "pytest-mock",
     "pytest-cov",
     "httpx",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary",
 ]
 
 [project.optional-dependencies]

@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from teach_me.models.job import JobCreate, JobModel, JobUpdate
+from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
 
 
 @pytest.mark.unit

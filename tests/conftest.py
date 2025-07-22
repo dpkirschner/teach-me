@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.job import JobCreate, JobModel, JobUpdate
+from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
 
 
 @pytest.fixture
