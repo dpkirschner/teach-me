@@ -15,10 +15,11 @@ dev = [
     "mypy==1.17.0",
     "pytest==8.4.1",
     "pytest-cov==6.2.1",
+    "pytest-mock",
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 110
 target-version = "py311"
 
 [tool.ruff.lint]

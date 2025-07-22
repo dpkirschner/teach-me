@@ -39,8 +39,20 @@ install-dev: $(PYTHON) ## Sync development dependencies and install the project.
 # ==============================================================================
 # QUALITY & TESTING
 # ==============================================================================
-test: $(PYTHON) ## Run tests with pytest.
+test: $(PYTHON) ## Run all tests with pytest.
 	$(PYTHON) -m pytest $(TEST_DIR) -v
+
+test-unit: $(PYTHON) ## Run unit tests only.
+	$(PYTHON) -m pytest $(TEST_DIR) -v -m unit
+
+test-integration: $(PYTHON) ## Run integration tests only.
+	$(PYTHON) -m pytest $(TEST_DIR) -v -m integration
+
+test-api: $(PYTHON) ## Run API tests only.
+	$(PYTHON) -m pytest $(TEST_DIR) -v -m api
+
+test-coverage: $(PYTHON) ## Run tests with coverage report.
+	$(PYTHON) -m pytest $(TEST_DIR) --cov=src --cov-report=html --cov-report=term-missing
 
 lint: $(PYTHON) ## Check for linting errors with Ruff.
 	$(PYTHON) -m ruff check .

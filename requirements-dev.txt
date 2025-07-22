@@ -41,6 +41,7 @@ httptools==0.6.4
     # via uvicorn
 httpx[http2]==0.28.1
     # via
+    #   -r /opt/code/teach-me/requirements.in
     #   gotrue
     #   postgrest
     #   storage3
@@ -88,10 +89,16 @@ pyjwt==2.10.1
     # via gotrue
 pytest==8.4.1
     # via
+    #   -r /opt/code/teach-me/requirements.in
     #   -r requirements-dev.in
     #   pytest-cov
+    #   pytest-mock
 pytest-cov==6.2.1
-    # via -r requirements-dev.in
+    # via
+    #   -r /opt/code/teach-me/requirements.in
+    #   -r requirements-dev.in
+pytest-mock==3.14.1
+    # via -r /opt/code/teach-me/requirements.in
 python-dateutil==2.9.0.post0
     # via storage3
 python-dotenv==1.1.1

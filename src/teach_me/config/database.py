@@ -3,24 +3,23 @@
 import logging
 from functools import lru_cache
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
-from supabase import create_client, Client
+from supabase import Client, create_client
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings."""
-    
+
     supabase_url: str
     supabase_key: str
-    
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+
+    model_config = ConfigDict(env_file=".env", extra="ignore")
 
 
-@lru_cache()
+@lru_cache
 def get_database_settings() -> DatabaseSettings:
     """Get cached database settings."""
     logger.debug("Loading database settings")
@@ -35,7 +34,7 @@ def get_supabase_client() -> Client:
     settings = get_database_settings()
     logger.debug(f"Using URL: {settings.supabase_url}")
     logger.debug(f"Using key: {settings.supabase_key[:10]}...")
-    
+
     client = create_client(settings.supabase_url, settings.supabase_key)
     logger.debug("Supabase client created successfully")
     return client

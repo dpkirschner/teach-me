@@ -17,6 +17,8 @@ certifi==2025.7.14
     #   httpx
 click==8.2.1
     # via uvicorn
+coverage[toml]==7.9.2
+    # via pytest-cov
 deprecation==2.1.0
     # via
     #   postgrest
@@ -39,6 +41,7 @@ httptools==0.6.4
     # via uvicorn
 httpx[http2]==0.28.1
     # via
+    #   -r requirements.in
     #   gotrue
     #   postgrest
     #   storage3
@@ -50,8 +53,16 @@ idna==3.10
     # via
     #   anyio
     #   httpx
+iniconfig==2.1.0
+    # via pytest
 packaging==25.0
-    # via deprecation
+    # via
+    #   deprecation
+    #   pytest
+pluggy==1.6.0
+    # via
+    #   pytest
+    #   pytest-cov
 postgrest==1.1.1
     # via supabase
 pydantic==2.11.7
@@ -66,8 +77,19 @@ pydantic-core==2.33.2
     # via pydantic
 pydantic-settings==2.10.1
     # via -r requirements.in
+pygments==2.19.2
+    # via pytest
 pyjwt==2.10.1
     # via gotrue
+pytest==8.4.1
+    # via
+    #   -r requirements.in
+    #   pytest-cov
+    #   pytest-mock
+pytest-cov==6.2.1
+    # via -r requirements.in
+pytest-mock==3.14.1
+    # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via storage3
 python-dotenv==1.1.1
