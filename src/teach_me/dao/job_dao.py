@@ -4,6 +4,7 @@ import logging
 from uuid import UUID
 
 from postgrest.exceptions import APIError
+from pydantic import ValidationError
 from supabase import Client
 
 from ..models.job import JobCreate, JobModel, JobUpdate
@@ -31,7 +32,7 @@ class JobDAO:
 
             if not result.data:
                 logger.error("No data returned from insert")
-                raise APIError("Failed to create job")
+                raise APIError({"message": "Failed to create job"})
 
             created_job = JobModel(**result.data[0])
             logger.debug(f"Created job model: {created_job}")
@@ -53,6 +54,8 @@ class JobDAO:
 
             return JobModel(**result.data[0])
         except APIError as e:
+            raise Exception(f"Database error getting job: {e}") from e
+        except ValidationError as e:
             raise Exception(f"Database error getting job: {e}") from e
 
     def get_all(self, limit: int = 100, offset: int = 0) -> list[JobModel]:

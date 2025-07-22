@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.teach_me.config.database import (
+from teach_me.config.database import (
     DatabaseSettings,
     get_database_settings,
     get_supabase_client,
@@ -60,22 +60,15 @@ class TestDatabaseSettings:
             # Should return same instance (cached)
             assert result1 is result2
 
-    @patch("src.teach_me.config.database.create_client")
-    @patch("src.teach_me.config.database.get_database_settings")
-    def test_get_supabase_client(self, mock_get_settings, mock_create_client):
+    def test_get_supabase_client_with_mocker(self, mocker):
         """Test get_supabase_client creates client with correct settings."""
-        # Setup
-        mock_settings = Mock()
-        mock_settings.supabase_url = "https://test.supabase.co"
-        mock_settings.supabase_key = "test-key"
-        mock_get_settings.return_value = mock_settings
+        mock_settings = Mock(supabase_url="https://test.supabase.co", supabase_key="test-key")
+        mocker.patch("teach_me.config.database.get_database_settings", return_value=mock_settings)
 
         mock_client = Mock()
-        mock_create_client.return_value = mock_client
+        mock_create_client = mocker.patch("teach_me.config.database.create_client", return_value=mock_client)
 
-        # Execute
         result = get_supabase_client()
 
-        # Assert
         assert result is mock_client
         mock_create_client.assert_called_once_with("https://test.supabase.co", "test-key")

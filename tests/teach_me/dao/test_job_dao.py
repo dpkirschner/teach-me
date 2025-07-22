@@ -1,15 +1,14 @@
 """Tests for JobDAO class."""
 
 from datetime import datetime
-from unittest.mock import Mock
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
 from postgrest.exceptions import APIError
+from pydantic import ValidationError
 
-from src.teach_me.dao.job_dao import JobDAO
-from src.teach_me.models.job import JobModel, JobCreate, JobUpdate
+from teach_me.dao.job_dao import JobDAO
+from teach_me.models.job import JobCreate, JobModel, JobUpdate
 
 
 @pytest.fixture
@@ -32,7 +31,11 @@ class TestJobDAO:
 
     def test_create(self, job_dao, mock_table_query, mock_supabase_result, sample_job_create):
         """Test successful job creation."""
-        mock_data = {"id": str(uuid4()), "content": sample_job_create.content, "created_at": datetime.now().isoformat()}
+        mock_data = {
+            "id": str(uuid4()),
+            "content": sample_job_create.content,
+            "created_at": datetime.now().isoformat(),
+        }
         result = mock_supabase_result(data=[mock_data])
         mock_table_query.configure_mock(**{"insert.return_value.execute.return_value": result})
 
@@ -47,7 +50,9 @@ class TestJobDAO:
         job_id = uuid4()
         mock_data = {"id": str(job_id), "content": "Test content", "created_at": datetime.now().isoformat()}
         result = mock_supabase_result(data=[mock_data])
-        mock_table_query.configure_mock(**{"select.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"select.return_value.eq.return_value.execute.return_value": result}
+        )
 
         found_job = job_dao.get_by_id(job_id)
 
@@ -59,7 +64,9 @@ class TestJobDAO:
     def test_get_by_id_not_found(self, job_dao, mock_table_query, mock_supabase_result):
         """Test job retrieval when job not found."""
         result = mock_supabase_result(data=[])
-        mock_table_query.configure_mock(**{"select.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"select.return_value.eq.return_value.execute.return_value": result}
+        )
 
         found_job = job_dao.get_by_id(uuid4())
 
@@ -72,7 +79,9 @@ class TestJobDAO:
             {"id": str(uuid4()), "content": "Job 2", "created_at": datetime.now().isoformat()},
         ]
         result = mock_supabase_result(data=mock_data)
-        mock_table_query.configure_mock(**{"select.return_value.range.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"select.return_value.range.return_value.execute.return_value": result}
+        )
 
         jobs = job_dao.get_all(limit=10, offset=0)
 
@@ -83,9 +92,15 @@ class TestJobDAO:
     def test_update_success(self, job_dao, mock_table_query, mock_supabase_result, sample_job_update):
         """Test successful job update."""
         job_id = uuid4()
-        mock_data = {"id": str(job_id), "content": sample_job_update.content, "created_at": datetime.now().isoformat()}
+        mock_data = {
+            "id": str(job_id),
+            "content": sample_job_update.content,
+            "created_at": datetime.now().isoformat(),
+        }
         result = mock_supabase_result(data=[mock_data])
-        mock_table_query.configure_mock(**{"update.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"update.return_value.eq.return_value.execute.return_value": result}
+        )
 
         updated_job = job_dao.update(job_id, sample_job_update)
 
@@ -94,21 +109,25 @@ class TestJobDAO:
         mock_table_query.update.assert_called_with({"content": sample_job_update.content})
         mock_table_query.update.return_value.eq.assert_called_with("id", str(job_id))
 
-    def test_update_no_changes(self, mocker, job_dao, mock_table_query, sample_job_create):
+    def test_update_no_changes(self, mocker, job_dao, mock_table_query):
         """Test job update with no changes does not call the database."""
-        mocker.patch.object(job_dao, "get_by_id", return_value=sample_job_create)
+        job_id = uuid4()
+        existing_job = JobModel(id=job_id, content="Test content", created_at=datetime.now())
+        mocker.patch.object(job_dao, "get_by_id", return_value=existing_job)
 
-        result = job_dao.update(sample_job_create.id, JobUpdate())
+        result = job_dao.update(job_id, JobUpdate())
 
-        assert result == sample_job_create
-        job_dao.get_by_id.assert_called_once_with(sample_job_create.id)
+        assert result == existing_job
+        job_dao.get_by_id.assert_called_once_with(job_id)
         mock_table_query.update.assert_not_called()
 
     def test_delete_success(self, job_dao, mock_table_query, mock_supabase_result):
         """Test successful job deletion."""
         job_id = uuid4()
         result = mock_supabase_result(data=[{"id": str(job_id)}])
-        mock_table_query.configure_mock(**{"delete.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"delete.return_value.eq.return_value.execute.return_value": result}
+        )
 
         was_deleted = job_dao.delete(job_id)
 
@@ -118,7 +137,9 @@ class TestJobDAO:
     def test_delete_not_found(self, job_dao, mock_table_query, mock_supabase_result):
         """Test job deletion when job not found."""
         result = mock_supabase_result(data=[])
-        mock_table_query.configure_mock(**{"delete.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"delete.return_value.eq.return_value.execute.return_value": result}
+        )
 
         was_deleted = job_dao.delete(uuid4())
 
@@ -127,10 +148,15 @@ class TestJobDAO:
     @pytest.mark.parametrize(
         "method, kwargs, mock_chain, error_message",
         [
-            ("create", {"model": JobCreate(content="c")}, "insert.execute", "Database error creating job"),
+            ("create", {"job_data": JobCreate(content="c")}, "insert.execute", "Database error creating job"),
             ("get_by_id", {"job_id": uuid4()}, "select.eq.execute", "Database error getting job"),
             ("get_all", {}, "select.range.execute", "Database error getting jobs"),
-            ("update", {"job_id": uuid4(), "model": JobUpdate(content="u")}, "update.eq.execute", "Database error updating job"),
+            (
+                "update",
+                {"job_id": uuid4(), "job_data": JobUpdate(content="u")},
+                "update.eq.execute",
+                "Database error updating job",
+            ),
             ("delete", {"job_id": uuid4()}, "delete.eq.execute", "Database error deleting job"),
         ],
     )
@@ -147,9 +173,11 @@ class TestJobDAO:
         """Test that invalid data from database raises a specific exception."""
         mock_data = [{"id": "invalid-uuid", "created_at": "invalid-date"}]
         result = mock_supabase_result(data=mock_data)
-        mock_table_query.configure_mock(**{"select.return_value.eq.return_value.execute.return_value": result})
+        mock_table_query.configure_mock(
+            **{"select.return_value.eq.return_value.execute.return_value": result}
+        )
 
         with pytest.raises(Exception, match="Database error getting job") as exc_info:
             job_dao.get_by_id(uuid4())
-        
+
         assert isinstance(exc_info.value.__cause__, ValidationError)
