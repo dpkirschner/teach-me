@@ -1,4 +1,3 @@
-import logging
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -7,10 +6,11 @@ from ..config.database import get_supabase_client
 from ..dao.job_dao import JobDAO
 from ..models.job import JobCreate, JobUpdate
 from ..schemas.job import JobRequest, JobResponse
+from ..utils.logging import get_teach_me_logger, setup_teach_me_logger
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure teach_me namespace logging
+setup_teach_me_logger(level="DEBUG")
+logger = get_teach_me_logger("api")
 
 app = FastAPI()
 
