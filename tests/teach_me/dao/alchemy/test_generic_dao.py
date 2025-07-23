@@ -2,22 +2,23 @@
 
 import pytest
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy.orm import Session
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Session, declarative_base
 
 from teach_me.dao.alchemy.generic_dao import (
     GenericSQLAlchemyDAO,
 )
 
+Base = declarative_base()
 
-class FakeORMItem:
+
+class FakeORMItem(Base):
     """A fake SQLAlchemy ORM model for testing."""
 
-    def __init__(self, id: int | None = None, name: str | None = None, **kwargs):
-        self.id = id
-        self.name = name
-        # Handle any additional kwargs that might come from model_dump()
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    __tablename__ = "fake_items"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
 
 
 class FakePydanticItem(BaseModel):
@@ -138,3 +139,91 @@ class TestGenericSQLAlchemyDAO:
         result = fake_item_dao.delete(99)
         mock_session.delete.assert_not_called()
         assert result is False
+
+    def test_create_exception_handling(self, fake_item_dao, mock_session):
+        """Test create method exception handling (lines 46-48)."""
+        create_data = FakeItemCreate(name="Test")
+        mock_session.add.side_effect = Exception("Database error")
+
+        with pytest.raises(Exception, match="Database error"):
+            fake_item_dao.create(create_data)
+
+    def test_get_all_with_pagination(self, fake_item_dao, mock_session, mocker):
+        """Test get_all method with pagination and logging (lines 65-97)."""
+        # Mock the scalar count query
+        mock_session.scalar.return_value = 10
+
+        mock_orm_obj1 = FakeORMItem(id=1, name="Item 1")
+        mock_orm_obj2 = FakeORMItem(id=2, name="Item 2")
+
+        # Mock the scalars query result
+        mock_result = mocker.Mock()
+        mock_result.all.return_value = [mock_orm_obj1, mock_orm_obj2]
+        mock_session.scalars.return_value = mock_result
+
+        result = fake_item_dao.get_all(limit=5, offset=2)
+
+        # Verify the count query was executed
+        mock_session.scalar.assert_called_once()
+        # Verify the paginated query was executed
+        mock_session.scalars.assert_called_once()
+        # Verify results
+        assert len(result) == 2
+        assert result[0].id == 1
+        assert result[1].id == 2
+
+    def test_get_all_empty_table_logging(self, fake_item_dao, mock_session, mocker):
+        """Test get_all logs warning for empty table (lines 78-79)."""
+        # Mock empty table
+        mock_session.scalar.return_value = 0
+        mock_result = mocker.Mock()
+        mock_result.all.return_value = []
+        mock_session.scalars.return_value = mock_result
+
+        # Mock logger
+        mock_logger = mocker.patch("teach_me.dao.alchemy.generic_dao.logger")
+
+        result = fake_item_dao.get_all()
+
+        # Verify warning was logged
+        mock_logger.warning.assert_any_call("Table 'fake_items' is empty - no FakeORMItem records found")
+        assert result == []
+
+    def test_get_all_pagination_warning(self, fake_item_dao, mock_session, mocker):
+        """Test get_all logs warning for pagination mismatch (lines 89-93)."""
+        # Mock table with records but empty pagination result
+        mock_session.scalar.return_value = 100  # Table has records
+        mock_result = mocker.Mock()
+        mock_result.all.return_value = []  # But pagination returns empty
+        mock_session.scalars.return_value = mock_result
+
+        # Mock logger
+        mock_logger = mocker.patch("teach_me.dao.alchemy.generic_dao.logger")
+
+        result = fake_item_dao.get_all(offset=200, limit=10)
+
+        # Verify pagination warning was logged
+        expected_warning = (
+            "Pagination returned 0 FakeORMItem records (offset=200, limit=10) but table has 100 total records"
+        )
+        mock_logger.warning.assert_any_call(expected_warning)
+        assert result == []
+
+    def test_update_exception_handling(self, fake_item_dao, mock_session):
+        """Test update method exception handling (lines 121-123)."""
+        update_data = FakeItemUpdate(name="Updated")
+        mock_orm_obj = FakeORMItem(id=1, name="Original")
+        mock_session.get.return_value = mock_orm_obj
+        mock_session.flush.side_effect = Exception("Update error")
+
+        with pytest.raises(Exception, match="Update error"):
+            fake_item_dao.update(1, update_data)
+
+    def test_delete_exception_handling(self, fake_item_dao, mock_session):
+        """Test delete method exception handling (lines 140-142)."""
+        mock_orm_obj = FakeORMItem(id=1, name="To Delete")
+        mock_session.get.return_value = mock_orm_obj
+        mock_session.delete.side_effect = Exception("Delete error")
+
+        with pytest.raises(Exception, match="Delete error"):
+            fake_item_dao.delete(1)

@@ -144,3 +144,42 @@ class TestBaseService:
         result = fake_service.delete(uuid4())
         assert result is False
         mock_session.commit.assert_not_called()
+
+    def test_get_all_success(self, fake_service, mock_dao):
+        """Test successful retrieval of all entities."""
+        mock_dao.get_all.return_value = [FakeDAOModel(id=1, name="Item 1"), FakeDAOModel(id=2, name="Item 2")]
+
+        result = fake_service.get_all(offset=0, limit=100)
+
+        mock_dao.get_all.assert_called_once_with(offset=0, limit=100)
+        assert len(result) == 2
+        assert all(isinstance(item, FakeAPIResponse) for item in result)
+
+    def test_get_all_exception_handling(self, fake_service, mock_dao):
+        """Test that exceptions in get_all are propagated."""
+        mock_dao.get_all.side_effect = Exception("DAO error")
+
+        with pytest.raises(Exception, match="DAO error"):
+            fake_service.get_all()
+
+    def test_update_failure_rolls_back(self, fake_service, mock_dao, mock_session):
+        """Test that a failure during update rolls back the transaction."""
+        entity_id = uuid4()
+        mock_dao.update.side_effect = ValueError("Update error")
+
+        with pytest.raises(ValueError, match="Update error"):
+            fake_service.update(entity_id, FakeAPIRequest(name="Bad Update"))
+
+        mock_session.rollback.assert_called_once()
+        mock_session.commit.assert_not_called()
+
+    def test_delete_failure_rolls_back(self, fake_service, mock_dao, mock_session):
+        """Test that a failure during delete rolls back the transaction."""
+        entity_id = uuid4()
+        mock_dao.delete.side_effect = ValueError("Delete error")
+
+        with pytest.raises(ValueError, match="Delete error"):
+            fake_service.delete(entity_id)
+
+        mock_session.rollback.assert_called_once()
+        mock_session.commit.assert_not_called()
