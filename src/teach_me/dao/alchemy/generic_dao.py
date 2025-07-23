@@ -70,7 +70,7 @@ class GenericSQLAlchemyDAO(
         # Get total count for operational monitoring
         logger.debug(f"About to execute count query for {table_name}")
         count_stmt = select(func.count()).select_from(self.orm_model)
-        logger.debug(f"Count statement prepared, executing...")
+        logger.debug("Count statement prepared, executing...")
         total_count = self.session.scalar(count_stmt) or 0
         logger.debug(f"Count query completed, result: {total_count}")
 
