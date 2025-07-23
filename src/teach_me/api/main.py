@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from ..config.sqlalchemy_db import get_db_session
+from ..config.sqlalchemy_db import db
 from ..dao.job_dao import JobDAO
 from ..services.job_service import JobService
 from ..utils.logging import get_teach_me_logger, setup_teach_me_logger
@@ -34,8 +34,10 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 # -- Dependency Injection --
 
 
-def get_job_service(session: Session = Depends(get_db_session)) -> JobService:
+def get_job_service(session: Session = Depends(lambda: db.get_db_session() if db else None)) -> JobService:
     """Dependency to get JobService instance."""
+    if not db:
+        raise HTTPException(status_code=500, detail="Database not initialized")
     return JobService(JobDAO(session), session)
 
 
