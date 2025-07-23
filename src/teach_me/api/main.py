@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..config.sqlalchemy_db import get_db_session
@@ -9,109 +10,77 @@ from ..services.job_service import JobService
 from ..utils.logging import get_teach_me_logger, setup_teach_me_logger
 from .models.job import JobRequest, JobResponse
 
-# Configure teach_me namespace logging
+# Configure logging
 setup_teach_me_logger(level="INFO")
 logger = get_teach_me_logger("api")
 
 app = FastAPI()
 
-
-# Create dependency variables to avoid B008 warning
-_db_session_dependency = Depends(get_db_session)
+# -- Exception Handlers --
 
 
-def get_job_dao(session: Session = _db_session_dependency) -> JobDAO:
-    """Dependency to get JobDAO instance."""
-    logger.debug("Creating JobDAO with session")
-    return JobDAO(session)
+@app.exception_handler(ValueError)
+async def value_error_exception_handler(request: Request, exc: ValueError) -> JSONResponse:
+    logger.warning(f"Validation error: {exc}")
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-def get_job_service(session: Session = _db_session_dependency) -> JobService:
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+
+# -- Dependency Injection --
+
+
+def get_job_service(session: Session = Depends(get_db_session)) -> JobService:
     """Dependency to get JobService instance."""
-    logger.debug("Creating JobService with session and DAO")
-    job_dao = JobDAO(session)
-    return JobService(job_dao, session)
+    return JobService(JobDAO(session), session)
 
 
-# Define dependencies after the functions are created
-_job_dao_dependency = Depends(get_job_dao)
-_job_service_dependency = Depends(get_job_service)
+# -- API Endpoints --
 
 
 @app.post("/jobs/", status_code=201, response_model=JobResponse)
-def create_job(job: JobRequest, job_service: JobService = _job_service_dependency) -> JobResponse:
+def create_job(job: JobRequest, service: JobService = Depends(get_job_service)) -> JobResponse:
     """Create a new job."""
-    logger.debug(f"Creating job with content: {job.content}")
     try:
-        return job_service.create_job(job)
-    except ValueError as e:
-        logger.warning(f"Validation error creating job: {e}")
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        return service.create_job(job)
     except Exception as e:
         logger.error(f"Error creating job: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/jobs/{job_id}", response_model=JobResponse)
-def get_job(job_id: UUID, job_service: JobService = _job_service_dependency) -> JobResponse:
+def get_job(job_id: UUID, service: JobService = Depends(get_job_service)) -> JobResponse:
     """Get a job by ID."""
-    try:
-        job = job_service.get_job_by_id(job_id)
-        if not job:
-            raise HTTPException(status_code=404, detail="Job not found")
-        return job
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting job {job_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    job = service.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found") from None
+    return job
 
 
 @app.get("/jobs/", response_model=list[JobResponse])
 def get_jobs(
-    limit: int = 100, offset: int = 0, job_service: JobService = _job_service_dependency
+    limit: int = 100, offset: int = 0, service: JobService = Depends(get_job_service)
 ) -> list[JobResponse]:
     """Get all jobs with pagination."""
-    logger.debug(f"Getting jobs with limit: {limit}, offset: {offset}")
-    try:
-        jobs = job_service.get_all_jobs(offset=offset, limit=limit)
-        logger.debug(f"Retrieved {len(jobs)} jobs")
-        return jobs
-    except Exception as e:
-        logger.error(f"Error getting jobs: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    return service.get_all_jobs(offset=offset, limit=limit)
 
 
 @app.put("/jobs/{job_id}", response_model=JobResponse)
-def update_job(
-    job_id: UUID, job: JobRequest, job_service: JobService = _job_service_dependency
-) -> JobResponse:
+def update_job(job_id: UUID, job: JobRequest, service: JobService = Depends(get_job_service)) -> JobResponse:
     """Update a job by ID."""
-    try:
-        updated_job = job_service.update_job(job_id, job)
-        if not updated_job:
-            raise HTTPException(status_code=404, detail="Job not found")
-        return updated_job
-    except ValueError as e:
-        logger.warning(f"Validation error updating job {job_id}: {e}")
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating job {job_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    updated_job = service.update_job(job_id, job)
+    if not updated_job:
+        raise HTTPException(status_code=404, detail="Job not found") from None
+    return updated_job
 
 
-@app.delete("/jobs/{job_id}")
-def delete_job(job_id: UUID, job_service: JobService = _job_service_dependency) -> dict:
+@app.delete("/jobs/{job_id}", status_code=200)
+def delete_job(job_id: UUID, service: JobService = Depends(get_job_service)) -> dict:
     """Delete a job by ID."""
-    try:
-        deleted = job_service.delete_job(job_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Job not found")
-        return {"message": "Job deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deleting job {job_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    if not service.delete_job(job_id):
+        raise HTTPException(status_code=404, detail="Job not found") from None
+    return {"message": "Job deleted successfully"}

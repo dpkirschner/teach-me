@@ -45,6 +45,7 @@ select = [
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
 ]
+ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.11"
