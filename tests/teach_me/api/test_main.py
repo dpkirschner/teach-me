@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from teach_me.api.main import app, get_job_service
-from teach_me.schemas.job import JobResponse
+from teach_me.api.models.job import JobResponse
 
 
 @pytest.fixture

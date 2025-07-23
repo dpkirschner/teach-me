@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from ..models.data.job import Base
+from ..dao.models.job import Base
 
 # Load environment variables from .env file
 load_dotenv()

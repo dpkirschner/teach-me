@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 
 from ..config.sqlalchemy_db import get_db_session
 from ..dao.job_dao import JobDAO
-from ..schemas.job import JobRequest, JobResponse
 from ..services.job_service import JobService
 from ..utils.logging import get_teach_me_logger, setup_teach_me_logger
+from .models.job import JobRequest, JobResponse
 
 # Configure teach_me namespace logging
 setup_teach_me_logger(level="INFO")

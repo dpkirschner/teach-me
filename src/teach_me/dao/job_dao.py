@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 
-from ..models.data.job import Job
-from ..models.request.job import JobCreate, JobModel, JobUpdate
+from ..api.models.job import JobRequest, JobUpdateRequest
+from ..services.models.job import JobModel
 from .alchemy.generic_dao import GenericSQLAlchemyDAO
+from .models.job import Job
 
 
-class JobDAO(GenericSQLAlchemyDAO[Job, JobModel, JobCreate, JobUpdate]):
+class JobDAO(GenericSQLAlchemyDAO[Job, JobModel, JobRequest, JobUpdateRequest]):
     """Data access object for Job models."""
 
     def __init__(self, session: Session):

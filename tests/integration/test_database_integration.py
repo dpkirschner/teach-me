@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
+from teach_me.api.models.job import JobRequest, JobUpdateRequest
 from teach_me.config.supabase_db import get_supabase_client
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.request.job import JobCreate, JobUpdate
 
 
 @pytest.mark.integration
@@ -38,7 +38,7 @@ class TestDatabaseIntegration:
     def test_job_crud_operations(self, test_dao):
         """Test complete CRUD cycle with real database."""
         # Create
-        job_create = JobCreate(content="Integration test job")
+        job_create = JobRequest(content="Integration test job")
         created_job = test_dao.create(job_create)
 
         assert created_job.content == "Integration test job"
@@ -51,7 +51,7 @@ class TestDatabaseIntegration:
         assert retrieved_job.content == "Integration test job"
 
         # Update
-        job_update = JobUpdate(content="Updated integration test job")
+        job_update = JobUpdateRequest(content="Updated integration test job")
         updated_job = test_dao.update(job_id, job_update)
         assert updated_job is not None
         assert updated_job.content == "Updated integration test job"
@@ -69,7 +69,7 @@ class TestDatabaseIntegration:
         # Create multiple jobs
         created_jobs = []
         for i in range(5):
-            job_create = JobCreate(content=f"Test job {i}")
+            job_create = JobRequest(content=f"Test job {i}")
             created_job = test_dao.create(job_create)
             created_jobs.append(created_job)
 

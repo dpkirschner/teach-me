@@ -12,6 +12,12 @@ class JobRequest(BaseModel):
     content: str
 
 
+class JobUpdateRequest(BaseModel):
+    """Request schema for updating a job."""
+
+    content: str | None = None
+
+
 class JobResponse(BaseModel):
     """Response schema for job operations."""
 

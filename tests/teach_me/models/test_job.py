@@ -6,45 +6,46 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
+from teach_me.api.models.job import JobRequest, JobUpdateRequest
+from teach_me.services.models.job import JobModel
 
 
 @pytest.mark.unit
 class TestJobModels:
     """Test cases for Job models."""
 
-    def test_job_create_valid(self):
-        """Test JobCreate with valid data."""
-        job_create = JobCreate(content="Test job content")
+    def test_job_request_valid(self):
+        """Test JobRequest with valid data."""
+        job_request = JobRequest(content="Test job content")
 
-        assert job_create.content == "Test job content"
+        assert job_request.content == "Test job content"
 
-    def test_job_create_empty_content(self):
-        """Test JobCreate with empty content."""
+    def test_job_request_empty_content(self):
+        """Test JobRequest with empty content."""
         # Empty strings are allowed by default in Pydantic
-        job_create = JobCreate(content="")
-        assert job_create.content == ""
+        job_request = JobRequest(content="")
+        assert job_request.content == ""
 
-    def test_job_create_none_content(self):
-        """Test JobCreate with None content."""
+    def test_job_request_none_content(self):
+        """Test JobRequest with None content."""
         with pytest.raises(ValidationError):
-            JobCreate(content=None)
+            JobRequest(content=None)
 
-    def test_job_update_valid(self):
-        """Test JobUpdate with valid data."""
-        job_update = JobUpdate(content="Updated content")
+    def test_job_update_request_valid(self):
+        """Test JobUpdateRequest with valid data."""
+        job_update = JobUpdateRequest(content="Updated content")
 
         assert job_update.content == "Updated content"
 
-    def test_job_update_optional_content(self):
-        """Test JobUpdate with no content (optional)."""
-        job_update = JobUpdate()
+    def test_job_update_request_optional_content(self):
+        """Test JobUpdateRequest with no content (optional)."""
+        job_update = JobUpdateRequest()
 
         assert job_update.content is None
 
-    def test_job_update_exclude_unset(self):
-        """Test JobUpdate exclude_unset functionality."""
-        job_update = JobUpdate()
+    def test_job_update_request_exclude_unset(self):
+        """Test JobUpdateRequest exclude_unset functionality."""
+        job_update = JobUpdateRequest()
         data = job_update.model_dump(exclude_unset=True)
 
         assert "content" not in data

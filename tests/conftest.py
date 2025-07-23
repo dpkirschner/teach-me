@@ -6,8 +6,9 @@ from uuid import uuid4
 
 import pytest
 
+from teach_me.api.models.job import JobRequest, JobUpdateRequest
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
+from teach_me.services.models.job import JobModel
 
 
 @pytest.fixture
@@ -27,14 +28,14 @@ def job_dao(mock_supabase_client):
 
 @pytest.fixture
 def sample_job_create():
-    """Sample JobCreate data for testing."""
-    return JobCreate(content="Test job content")
+    """Sample JobRequest data for testing."""
+    return JobRequest(content="Test job content")
 
 
 @pytest.fixture
 def sample_job_update():
-    """Sample JobUpdate data for testing."""
-    return JobUpdate(content="Updated job content")
+    """Sample JobUpdateRequest data for testing."""
+    return JobUpdateRequest(content="Updated job content")
 
 
 @pytest.fixture

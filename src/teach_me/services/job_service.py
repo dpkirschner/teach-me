@@ -6,14 +6,14 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from teach_me.api.models.job import JobRequest, JobResponse, JobUpdateRequest
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
-from teach_me.schemas.job import JobRequest, JobResponse
 from teach_me.services.base_service import BaseService
+from teach_me.services.models.job import JobModel
 from teach_me.utils.logging import get_teach_me_logger
 
 
-class JobService(BaseService[JobRequest, JobResponse, JobModel, JobCreate, JobUpdate]):
+class JobService(BaseService[JobRequest, JobResponse, JobModel, JobRequest, JobUpdateRequest]):
     """
     Job service that handles business logic and model transformations for Job entities.
 
@@ -35,29 +35,29 @@ class JobService(BaseService[JobRequest, JobResponse, JobModel, JobCreate, JobUp
         self.job_dao = job_dao
         self.logger = get_teach_me_logger(__name__)
 
-    def _api_request_to_dao_create(self, api_request: JobRequest) -> JobCreate:
+    def _api_request_to_dao_create(self, api_request: JobRequest) -> JobRequest:
         """
-        Convert JobRequest to JobCreate model.
+        Convert JobRequest to create model (pass-through).
 
         Args:
             api_request: The JobRequest from the API
 
         Returns:
-            JobCreate model for DAO operations
+            JobRequest for DAO operations
         """
-        return JobCreate(content=api_request.content)
+        return api_request
 
-    def _api_request_to_dao_update(self, api_request: JobRequest) -> JobUpdate:
+    def _api_request_to_dao_update(self, api_request: JobRequest) -> JobUpdateRequest:
         """
-        Convert JobRequest to JobUpdate model.
+        Convert JobRequest to JobUpdateRequest model.
 
         Args:
             api_request: The JobRequest from the API
 
         Returns:
-            JobUpdate model for DAO operations
+            JobUpdateRequest model for DAO operations
         """
-        return JobUpdate(content=api_request.content)
+        return JobUpdateRequest(content=api_request.content)
 
     def _dao_model_to_api_response(self, dao_model: JobModel) -> JobResponse:
         """

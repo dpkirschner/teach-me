@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from teach_me.schemas.job import JobRequest, JobResponse
+from teach_me.api.models.job import JobRequest, JobResponse
 
 
 @pytest.mark.unit

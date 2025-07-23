@@ -6,9 +6,10 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import Session
 
+from teach_me.api.models.job import JobRequest, JobUpdateRequest
 from teach_me.dao.job_dao import JobDAO
-from teach_me.models.data.job import Job
-from teach_me.models.request.job import JobCreate, JobModel, JobUpdate
+from teach_me.dao.models.job import Job
+from teach_me.services.models.job import JobModel
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ class TestJobDAO:
 
     def test_create(self, job_dao, mock_session):
         """Test the create method."""
-        create_data = JobCreate(content="New job content")
+        create_data = JobRequest(content="New job content")
 
         # Mock refresh to simulate database setting the ID
         def refresh_side_effect(obj):
@@ -94,7 +95,7 @@ class TestJobDAO:
     def test_update_found(self, job_dao, mock_session):
         """Test the update method when job is found."""
         job_id = uuid4()
-        update_data = JobUpdate(content="Updated content")
+        update_data = JobUpdateRequest(content="Updated content")
         mock_job = Job(id=job_id, content="Original content", created_at=datetime.now())
         mock_session.get.return_value = mock_job
 
@@ -108,7 +109,7 @@ class TestJobDAO:
 
     def test_update_not_found(self, job_dao, mock_session):
         """Test the update method when job is not found."""
-        update_data = JobUpdate(content="Updated content")
+        update_data = JobUpdateRequest(content="Updated content")
         mock_session.get.return_value = None
 
         result = job_dao.update(uuid4(), update_data)
