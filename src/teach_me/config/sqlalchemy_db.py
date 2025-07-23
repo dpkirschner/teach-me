@@ -17,14 +17,9 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Supabase connection string format
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:[password]@[host]:[port]/[database]")
+DATABASE_URL = os.getenv("DATABASE_URL", "this_is_a_test_url")
 
 logger.info(f"Database URL configured: {DATABASE_URL[:50]}...")
-
-if "[password]" in DATABASE_URL:
-    logger.error("DATABASE_URL not properly configured - still contains placeholder values")
-    raise ValueError("DATABASE_URL environment variable must be set with actual values")
-
 # Create engine with connection pooling and timeouts
 engine = create_engine(
     DATABASE_URL,
