@@ -1,30 +1,33 @@
 import json
+
 from aws_cdk import (
-    Stack,
-    aws_lambda as _lambda,
-    aws_apigateway as apigw,
-    aws_logs as logs,
-    Duration,
     CfnOutput,
+    Duration,
+    Stack,
+)
+from aws_cdk import (
+    aws_apigateway as apigw,
+)
+from aws_cdk import (
+    aws_lambda as _lambda,
+)
+from aws_cdk import (
+    aws_logs as logs,
 )
 from constructs import Construct
 
-class InfrastructureStack(Stack):
 
+class InfrastructureStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        with open("config.json", "r") as f:
+        with open("config.json") as f:
             config = json.load(f)
 
         lambda_conf = config["lambda_config"]
         api_conf = config["api_gateway_config"]
 
-        log_group = logs.LogGroup(
-            self,
-            "FastAPILambdaLogGroup",
-            retention=logs.RetentionDays.ONE_WEEK
-        )
+        log_group = logs.LogGroup(self, "FastAPILambdaLogGroup", retention=logs.RetentionDays.ONE_WEEK)
 
         fastapi_lambda = _lambda.Function(
             self,
@@ -35,7 +38,7 @@ class InfrastructureStack(Stack):
             memory_size=lambda_conf["memory_size"],
             timeout=Duration.seconds(lambda_conf["timeout"]),
             environment=lambda_conf["environment"],
-            log_group=log_group
+            log_group=log_group,
         )
 
         api = apigw.LambdaRestApi(
@@ -46,11 +49,8 @@ class InfrastructureStack(Stack):
             deploy_options=apigw.StageOptions(
                 stage_name=api_conf["stage"],
                 throttling_rate_limit=api_conf["throttle"]["rate_limit"],
-                throttling_burst_limit=api_conf["throttle"]["burst_limit"]
-            )
+                throttling_burst_limit=api_conf["throttle"]["burst_limit"],
+            ),
         )
 
-        CfnOutput(self, "ApiEndpointUrl",
-            value=api.url,
-            description="The URL of the API Gateway endpoint"
-        )
+        CfnOutput(self, "ApiEndpointUrl", value=api.url, description="The URL of the API Gateway endpoint")

@@ -24,6 +24,9 @@ dependencies = [
     "aws-cdk-lib==2.206.0",
     "constructs==10.4.2",
     "boto3==1.39.11",
+    "huggingface_hub",
+    "pyyaml",
+    "mangum==0.19.0",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +36,11 @@ dev = [
     "pytest==8.4.1",
     "pytest-cov==6.2.1",
     "pytest-mock",
+    "types-PyYAML==6.0.12.20250516",
+    "types-requests==2.32.4.20250611",
+    "types-simplejson==3.20.0.20250326",
+    "types-tensorflow==2.18.0.20250516",
+    "types-tqdm==4.67.0.20250516",
 ]
 
 [tool.ruff]

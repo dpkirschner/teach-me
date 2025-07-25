@@ -182,3 +182,6 @@ Thumbs.db
 cdk.out/
 .cdk.staging/
 cdk.context.json
+
+# HuggingFace Models
+/models

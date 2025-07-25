@@ -1,0 +1,39 @@
+# Example configuration file for downloading HuggingFace models
+# This file demonstrates various download options and patterns
+
+models:
+  # Simple model download - downloads entire repository
+  - repo_id: "microsoft/DialoGPT-medium"
+  
+  # Model with specific revision/branch
+  - repo_id: "facebook/bart-large-cnn"
+    revision: "main"
+  
+  # Model with file filtering - only download JSON files
+  - repo_id: "sentence-transformers/all-MiniLM-L6-v2"
+    allow_patterns:
+      - "*.json"
+      - "*.txt"
+  
+  # Model excluding certain file types
+  - repo_id: "microsoft/DialoGPT-small"
+    ignore_patterns:
+      - "*.bin"
+      - "*.safetensors"
+  
+  # Advanced filtering example
+  - repo_id: "google/flan-t5-small"
+    revision: "main"
+    allow_patterns:
+      - "config.json"
+      - "tokenizer*"
+    ignore_patterns:
+      - "*.bin"
+
+# Optional: Override default cache directory for all models
+# cache_dir: "/app/models"
+
+# Note: This configuration will work with the download_models_from_config() function
+# Example usage:
+#   from src.models.huggingface_downloader import download_models_from_config
+#   results = download_models_from_config("models_config.yaml")
