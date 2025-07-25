@@ -177,3 +177,8 @@ Thumbs.db
 
 # Ruff
 .ruff_cache/
+
+# CDK
+cdk.out/
+.cdk.staging/
+cdk.context.json

@@ -20,6 +20,10 @@ dependencies = [
     "httpx",
     "sqlalchemy>=2.0.0",
     "psycopg2-binary",
+    "awscli==1.41.11",
+    "aws-cdk-lib==2.206.0",
+    "constructs==10.4.2",
+    "boto3==1.39.11",
 ]
 
 [project.optional-dependencies]

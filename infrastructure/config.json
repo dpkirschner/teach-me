@@ -1,0 +1,17 @@
+{
+  "lambda_config": {
+    "runtime": "python3.11",
+    "memory_size": 512,
+    "timeout": 30,
+    "environment": {
+      "LOG_LEVEL": "INFO"
+    }
+  },
+  "api_gateway_config": {
+    "stage": "dev",
+    "throttle": {
+      "rate_limit": 10,
+      "burst_limit": 20
+    }
+  }
+}
