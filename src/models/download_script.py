@@ -8,6 +8,7 @@ from pathlib import Path
 
 # Assuming these are your project's custom modules
 from teach_me.utils.logging import setup_teach_me_logger
+
 from .huggingface_downloader import HuggingFaceDownloader, ModelConfig
 
 
@@ -44,7 +45,10 @@ def download_from_config(downloader: HuggingFaceDownloader, config_path: str) ->
 
 def download_batch(downloader: HuggingFaceDownloader, repo_ids: list[str]) -> None:
     """Download multiple models in batch."""
-    model_configs = [ModelConfig(repo_id=repo_id) for repo_id in repo_ids]
+    model_configs = [
+        ModelConfig(repo_id=repo_id, revision=None, allow_patterns=None, ignore_patterns=None)
+        for repo_id in repo_ids
+    ]
     results = downloader.download_model_batch(model_configs)
 
     print("\nBatch Download Summary:")
@@ -86,7 +90,9 @@ Examples:
     parser.add_argument("--token", type=str, help="HuggingFace Hub token (overrides env var)")
     parser.add_argument("--force", action="store_true", help="Force re-download (single model only)")
     parser.add_argument("--revision", type=str, help="Model revision (single model only)")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging and error tracebacks")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging and error tracebacks"
+    )
 
     args = parser.parse_args()
 
@@ -98,10 +104,7 @@ Examples:
         parser.error("--force can only be used with --repo-id")
 
     try:
-        downloader = HuggingFaceDownloader(
-            token=args.token,
-            cache_dir=args.cache_dir
-        )
+        downloader = HuggingFaceDownloader(token=args.token, cache_dir=args.cache_dir)
 
         if args.repo_id:
             download_single_model(

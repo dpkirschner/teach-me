@@ -27,6 +27,8 @@ dependencies = [
     "huggingface_hub",
     "pyyaml",
     "mangum==0.19.0",
+    "transformers[torch]",
+    "torch",
 ]
 
 [project.optional-dependencies]
@@ -41,6 +43,8 @@ dev = [
     "types-simplejson==3.20.0.20250326",
     "types-tensorflow==2.18.0.20250516",
     "types-tqdm==4.67.0.20250516",
+    "transformers[torch]",
+    "torch",
 ]
 
 [tool.ruff]
