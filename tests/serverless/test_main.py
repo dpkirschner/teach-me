@@ -3,19 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.serverless.main import app
-
-
-@pytest.fixture
-def mock_model():
-    return MagicMock(spec=AutoModelForSequenceClassification)
-
-
-@pytest.fixture
-def mock_tokenizer():
-    return MagicMock(spec=AutoTokenizer)
 
 
 @pytest.fixture
@@ -28,71 +17,62 @@ def mock_classifier():
 
 
 @pytest.fixture
-def client_with_mocked_model(mock_model, mock_tokenizer, mock_classifier):
-    with patch("src.serverless.main.AutoModelForSequenceClassification.from_pretrained") as mock_model_load:
-        with patch("src.serverless.main.AutoTokenizer.from_pretrained") as mock_tokenizer_load:
-            with patch("src.serverless.main.pipeline") as mock_pipeline:
-                mock_model_load.return_value = mock_model
-                mock_tokenizer_load.return_value = mock_tokenizer
-                mock_pipeline.return_value = mock_classifier
+def client_with_mocked_model(mock_classifier):
+    with patch("src.serverless.main.pipeline") as mock_pipeline:
+        mock_pipeline.return_value = mock_classifier
 
-                with TestClient(app) as client:
-                    yield client
+        with TestClient(app) as client:
+            yield client
 
 
 class TestHealthCheck:
     def test_root_endpoint(self, client_with_mocked_model):
         response = client_with_mocked_model.get("/")
         assert response.status_code == 200
-        assert response.json() == {"message": "Sentiment Analysis API is ready"}
+        assert response.json() == {"status": "ok", "message": "Sentiment Analysis API is running"}
 
 
 class TestModelLoading:
     @patch.dict(os.environ, {"MODEL_NAME": "custom-model", "MODEL_PATH": "/custom/path"})
-    @patch("src.serverless.main.os.path.exists")
-    @patch("src.serverless.main.AutoModelForSequenceClassification.from_pretrained")
-    @patch("src.serverless.main.AutoTokenizer.from_pretrained")
+    @patch("src.serverless.main.os.path.isdir")
     @patch("src.serverless.main.pipeline")
-    def test_model_loading_with_custom_path_exists(
-        self, mock_pipeline, mock_tokenizer_load, mock_model_load, mock_exists
-    ):
-        mock_exists.return_value = True
+    def test_model_loading_with_custom_path_exists(self, mock_pipeline, mock_isdir):
+        mock_isdir.return_value = True
         mock_pipeline.return_value = MagicMock()
 
         with TestClient(app):
             pass
 
-        mock_model_load.assert_called_once_with("/custom/path")
-        mock_tokenizer_load.assert_called_once_with("/custom/path")
+        mock_pipeline.assert_called_once_with(
+            task="text-classification", model="/custom/path", return_all_scores=True
+        )
 
     @patch.dict(os.environ, {"MODEL_NAME": "custom-model", "MODEL_PATH": "/custom/path"})
-    @patch("src.serverless.main.os.path.exists")
-    @patch("src.serverless.main.AutoModelForSequenceClassification.from_pretrained")
-    @patch("src.serverless.main.AutoTokenizer.from_pretrained")
+    @patch("src.serverless.main.os.path.isdir")
     @patch("src.serverless.main.pipeline")
-    def test_model_loading_with_custom_path_not_exists(
-        self, mock_pipeline, mock_tokenizer_load, mock_model_load, mock_exists
-    ):
-        mock_exists.return_value = False
+    def test_model_loading_with_custom_path_not_exists(self, mock_pipeline, mock_isdir):
+        mock_isdir.return_value = False
         mock_pipeline.return_value = MagicMock()
 
         with TestClient(app):
             pass
 
-        mock_model_load.assert_called_once_with("custom-model")
-        mock_tokenizer_load.assert_called_once_with("custom-model")
+        mock_pipeline.assert_called_once_with(
+            task="text-classification", model="custom-model", return_all_scores=True
+        )
 
-    @patch("src.serverless.main.AutoModelForSequenceClassification.from_pretrained")
-    @patch("src.serverless.main.AutoTokenizer.from_pretrained")
     @patch("src.serverless.main.pipeline")
-    def test_model_loading_default_model(self, mock_pipeline, mock_tokenizer_load, mock_model_load):
+    def test_model_loading_default_model(self, mock_pipeline):
         mock_pipeline.return_value = MagicMock()
 
         with TestClient(app):
             pass
 
-        mock_model_load.assert_called_once_with("distilbert-base-uncased-finetuned-sst-2-english")
-        mock_tokenizer_load.assert_called_once_with("distilbert-base-uncased-finetuned-sst-2-english")
+        mock_pipeline.assert_called_once_with(
+            task="text-classification",
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            return_all_scores=True,
+        )
 
 
 class TestSentimentPrediction:
@@ -134,30 +114,21 @@ class TestSentimentPrediction:
 
         response = client_with_mocked_model.post("/invocations", json=request_data)
 
-        assert response.status_code == 400
-        assert "No text provided in instances" in response.json()["detail"]
+        assert response.status_code == 422
 
     def test_prediction_with_all_empty_texts(self, client_with_mocked_model):
         request_data = {"instances": [{"text": ""}, {"text": ""}]}
 
         response = client_with_mocked_model.post("/invocations", json=request_data)
 
-        assert response.status_code == 400
-        assert "No text provided in instances" in response.json()["detail"]
+        assert response.status_code == 422
 
     def test_prediction_with_mixed_empty_and_valid_texts(self, client_with_mocked_model):
-        app.state.classifier.return_value = [
-            [{"label": "POSITIVE", "score": 0.9998}, {"label": "NEGATIVE", "score": 0.0002}],
-            [{"label": "NEGATIVE", "score": 0.8888}, {"label": "POSITIVE", "score": 0.1112}],
-        ]
-
         request_data = {"instances": [{"text": ""}, {"text": "This is great!"}]}
 
         response = client_with_mocked_model.post("/invocations", json=request_data)
 
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["predictions"]) == 2
+        assert response.status_code == 422
 
 
 class TestErrorHandling:
@@ -181,16 +152,18 @@ class TestErrorHandling:
         response = client_with_mocked_model.post("/invocations", json=request_data)
 
         assert response.status_code == 500
-        assert "Prediction failed" in response.json()["detail"]
-        assert "Model inference failed" in response.json()["detail"]
+        assert "internal error" in response.json()["detail"]
 
     def test_empty_instances_list(self, client_with_mocked_model):
         request_data = {"instances": []}
 
         response = client_with_mocked_model.post("/invocations", json=request_data)
 
-        assert response.status_code == 400
-        assert "No text provided in instances" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert "predictions" in data
+        assert isinstance(data["predictions"], list)
+        assert len(data["predictions"]) == 0
 
 
 class TestResponseFormat:

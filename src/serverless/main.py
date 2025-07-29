@@ -13,8 +13,9 @@ from transformers import pipeline
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 class Instance(BaseModel):
-    text: str = Field(..., min_length=1)
+    text: str = Field(min_length=1)
 
 
 class Score(BaseModel):
@@ -28,7 +29,7 @@ class Prediction(BaseModel):
 
 
 class SentimentRequest(BaseModel):
-    instances: list[Instance] = Field(..., max_items=100)
+    instances: list[Instance] = Field(..., max_length=100)
 
 
 class SentimentResponse(BaseModel):
@@ -37,22 +38,21 @@ class SentimentResponse(BaseModel):
 
 # --- Lifespan and Model Loading ---
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     MODEL_NAME = os.getenv("MODEL_NAME", "distilbert-base-uncased-finetuned-sst-2-english")
-    MODEL_PATH = os.getenv("MODEL_PATH", f"./{MODEL_NAME}") # Default to a local path
+    MODEL_PATH = os.getenv("MODEL_PATH", f"./{MODEL_NAME}")  # Default to a local path
 
     model_source = MODEL_PATH if os.path.isdir(MODEL_PATH) else MODEL_NAME
     logger.info(f"Loading model from: {model_source}")
 
     # The pipeline handles model and tokenizer loading automatically
-    app.state.classifier = pipeline(
-        task="text-classification", model=model_source, return_all_scores=True
-    )
+    app.state.classifier = pipeline(task="text-classification", model=model_source, return_all_scores=True)
     logger.info("Model loaded successfully.")
-    
+
     yield
-    
+
     app.state.classifier = None
 
 
@@ -74,6 +74,10 @@ async def read_root() -> dict[str, str]:
 async def predict_sentiment(request: SentimentRequest) -> SentimentResponse:
     try:
         texts = [instance.text for instance in request.instances]
+
+        if not texts:
+            return SentimentResponse(predictions=[])
+
         results: list[list[dict[str, Any]]] = app.state.classifier(texts)
 
         predictions = [
@@ -90,7 +94,7 @@ async def predict_sentiment(request: SentimentRequest) -> SentimentResponse:
         # Log the full exception for debugging
         logger.error(f"Prediction failed: {e}", exc_info=True)
         # Return a generic error message to the client
-        raise HTTPException(status_code=500, detail="An internal error occurred during prediction.")
+        raise HTTPException(status_code=500, detail="An internal error occurred during prediction.") from e
 
 
 handler = Mangum(app)
